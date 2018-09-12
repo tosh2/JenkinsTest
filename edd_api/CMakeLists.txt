@@ -1,0 +1,32 @@
+cmake_minimum_required(VERSION 2.6)
+
+project (edd_api CXX)
+
+set(EDD_API_HEADERS edd_api.h)
+
+set(PROJECT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set(EDD_API_CODEGEN_DIR "${PROJECT_BINARY_DIR}/codegen")
+
+PREPEND(EDD_API_HEADERS_PATHS ${PROJECT_SOURCE_DIR} ${EDD_API_HEADERS})
+
+CODEGEN_FILES(EDD_API_CODEGEN_SOURCES ${EDD_API_CODEGEN_DIR} ${EDD_API_HEADERS})
+
+add_custom_command(OUTPUT ${EDD_API_CODEGEN_SOURCES}
+    COMMAND ${NGREST_BIN_PATH}ngrestcg -i "${PROJECT_SOURCE_DIR}" -o ${EDD_API_CODEGEN_DIR} -t service ${EDD_API_HEADERS}
+    DEPENDS ${EDD_API_HEADERS_PATHS}
+)
+
+file(GLOB EDD_API_SOURCES ${PROJECT_SOURCE_DIR}/*.cpp)
+
+list(APPEND EDD_API_SOURCES ${EDD_API_CODEGEN_SOURCES})
+
+include_directories(${PROJECT_SOURCE_DIR} $ENV{NGREST_EXT_INCLUDES})
+
+add_library(edd_api MODULE ${EDD_API_SOURCES})
+
+set_target_properties(edd_api PROPERTIES PREFIX "")
+set_target_properties(edd_api PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SERVICES_DIR}"
+)
+
+target_link_libraries(edd_api ngrestutils ngrestcommon ngrestjson ngrestengine $ENV{NGREST_EXT_LIBS})
